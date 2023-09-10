@@ -193,7 +193,7 @@ handle_call({set_state,Id,Key,Value,"lights"},_From, State) ->
     ConbeeAddr=State#state.ip_addr,
     ConbeePort=State#state.ip_port,
     Crypto=State#state.crypto,
-    Reply=lib_phoscon:set_state("lights",Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
+    Reply=lib_phoscon:set_state(Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
     {reply, Reply, State};
 
 
@@ -213,7 +213,7 @@ handle_call({set_state,Id,Key,Value,"sensors"},_From, State) ->
     ConbeeAddr=State#state.ip_addr,
     ConbeePort=State#state.ip_port,
     Crypto=State#state.crypto,
-    Reply=lib_phoscon:set_state("sensors",Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
+    Reply=lib_phoscon:set_state(Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
     {reply, Reply, State};
 
 %%---------------------------------------------------------------------
