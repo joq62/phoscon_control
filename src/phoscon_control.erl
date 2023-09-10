@@ -133,7 +133,9 @@ ping() ->
 %% --------------------------------------------------------------------
 init([]) ->
     {ok,HostName}=net:gethostname(),
-    {ok,[{conbee,ConbeeConfig}]}=etcd_host:get_appl_config(HostName),
+%    {ok,[{conbee,ConbeeConfig}]}=etcd_host:get_appl_config(HostName),
+
+    {ok,[{conbee,ConbeeConfig}]}=sd:call(etcd_provider,etcd_host,get_appl_config,[HostName],5000),
     {conbee_addr,ConbeeAddr}=lists:keyfind(conbee_addr,1,ConbeeConfig),
     {conbee_port,ConbeePort}=lists:keyfind(conbee_port,1,ConbeeConfig),
     {conbee_key,ConbeeKey}=lists:keyfind(conbee_key,1,ConbeeConfig),
