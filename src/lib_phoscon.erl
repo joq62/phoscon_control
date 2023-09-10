@@ -36,7 +36,9 @@
 get_maps("sensors",ConbeeAddr,ConbeePort,Crypto)->
     get("sensors",ConbeeAddr,ConbeePort,Crypto);
 get_maps("ligths",ConbeeAddr,ConbeePort,Crypto)->
-    get("ligths",ConbeeAddr,ConbeePort,Crypto).
+    get("ligths",ConbeeAddr,ConbeePort,Crypto);
+get_maps(NoMatch,ConbeeAddr,ConbeePort,Crypto)->
+    [{error,[NoMatch,?MODULE,?LINE]}].
 
 get(DeviceType,ConbeeAddr,ConbeePort,Crypto)->
     {ok, ConnPid} = gun:open(ConbeeAddr,ConbeePort),
