@@ -75,6 +75,23 @@ set_state(Id,Key,Value,DeviceType,Ip,Port,Crypto)->
     {ok, ConnPid} = gun:open(Ip,Port),
     StreamRef = gun:put(ConnPid, Cmd, 
 			[{<<"content-type">>, "application/json"}],Body),
-    Result=lib_conbee:get_reply(ConnPid,StreamRef),
+    Result=get_reply(ConnPid,StreamRef),
     ok=gun:close(ConnPid),
     Result.
+
+%%--------------------------------------------------------------------
+%% @doc
+%% @spec
+%% @end
+%%--------------------------------------------------------------------
+get_reply(ConnPid,StreamRef)->
+    case gun:await(ConnPid, StreamRef) of
+	{response, fin, Status, Headers} ->
+%	    io:format(" no_data ~p~n", [{?MODULE,?LINE}]),
+	    Body=[no_data];
+	{response, nofin, Status, Headers} ->
+%	    io:format(" ~p~n", [{?MODULE,?LINE}]),
+	    {ok, Body} = gun:await_body(ConnPid, StreamRef),
+	    Body
+    end,
+    {Status, Headers,Body}.
