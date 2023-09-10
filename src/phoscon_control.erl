@@ -172,8 +172,10 @@ handle_call({get_maps},_From, State) ->
     Crypto=State#state.crypto,
  
     LightsMaps=lib_phoscon:get_maps("lights",ConbeeAddr,ConbeePort,Crypto),
+    io:format("LightsMaps ~p~n",[{LightsMaps,?MODULE,?LINE}]),
     SensorsMaps=lib_phoscon:get_maps("sensors",ConbeeAddr,ConbeePort,Crypto),
-    Reply=lists:append(LightsMaps,SensorsMaps),
+    io:format("SensorsMaps ~p~n",[{SensorsMaps,?MODULE,?LINE}]),
+    Reply={LightsMaps,SensorsMaps},
     {reply, Reply, State};
 
 %%---------------------------------------------------------------------
