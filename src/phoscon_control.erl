@@ -172,20 +172,49 @@ handle_call({get_maps},_From, State) ->
     Crypto=State#state.crypto,
  
     LightsMaps=lib_phoscon:get_maps("lights",ConbeeAddr,ConbeePort,Crypto),
-    io:format("LightsMaps ~p~n",[{LightsMaps,?MODULE,?LINE}]),
     SensorsMaps=lib_phoscon:get_maps("sensors",ConbeeAddr,ConbeePort,Crypto),
-    io:format("SensorsMaps ~p~n",[{SensorsMaps,?MODULE,?LINE}]),
-    Reply={LightsMaps,SensorsMaps},
+    Reply=[{"lights",LightsMaps},{"sensors",SensorsMaps}],
     {reply, Reply, State};
+
 
 %%---------------------------------------------------------------------
 %% Lights 
 %%---------------------------------------------------------------------
+handle_call({get_maps,"lights"},_From, State) ->
+    ConbeeAddr=State#state.ip_addr,
+    ConbeePort=State#state.ip_port,
+    Crypto=State#state.crypto,
+ 
+    Reply=lib_phoscon:get_maps("lights",ConbeeAddr,ConbeePort,Crypto),
+    {reply, Reply, State};
+
+handle_call({set_state,Id,Key,Value,"lights"},_From, State) ->
+    DeviceType="lights",
+    ConbeeAddr=State#state.ip_addr,
+    ConbeePort=State#state.ip_port,
+    Crypto=State#state.crypto,
+    Reply=lib_phoscon:set_state("lights",Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
+    {reply, Reply, State};
 
 
 %%---------------------------------------------------------------------
 %%  Sensors 
 %%---------------------------------------------------------------------
+handle_call({get_maps,"sensors"},_From, State) ->
+    ConbeeAddr=State#state.ip_addr,
+    ConbeePort=State#state.ip_port,
+    Crypto=State#state.crypto,
+
+    Reply=lib_phoscon:get_maps("sensors",ConbeeAddr,ConbeePort,Crypto),
+    {reply, Reply, State};
+
+handle_call({set_state,Id,Key,Value,"sensors"},_From, State) ->
+    DeviceType="sensors",
+    ConbeeAddr=State#state.ip_addr,
+    ConbeePort=State#state.ip_port,
+    Crypto=State#state.crypto,
+    Reply=lib_phoscon:set_state("sensors",Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
+    {reply, Reply, State};
 
 %%---------------------------------------------------------------------
 %%  General 
