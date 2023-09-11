@@ -134,8 +134,9 @@ ping() ->
 init([]) ->
     {ok,HostName}=net:gethostname(),
 %    {ok,[{conbee,ConbeeConfig}]}=etcd_host:get_appl_config(HostName),
-
-    {ok,[{conbee,ConbeeConfig}]}=rpc:call('etcd_c201@c201',etcd_host,get_appl_config,[HostName],5000),
+    
+    {ok,EtcdNode}=connect_etcd(),
+    {ok,[{conbee,ConbeeConfig}]}=rpc:call(EtcdNode,etcd_host,get_appl_config,[HostName],5000),
     {conbee_addr,ConbeeAddr}=lists:keyfind(conbee_addr,1,ConbeeConfig),
     {conbee_port,ConbeePort}=lists:keyfind(conbee_port,1,ConbeeConfig),
     {conbee_key,ConbeeKey}=lists:keyfind(conbee_key,1,ConbeeConfig),
@@ -292,3 +293,27 @@ code_change(_OldVsn, State, _Extra) ->
 %% Description: Initiate the eunit tests, set upp needed processes etc
 %% Returns: non
 %% --------------------------------------------------------------------
+connect_etcd()->
+    Node='etcd_c201@c201',
+    Result=case connect_etcd(Node,20*1000,1000,false) of
+	       false->
+		   {error,["Can't connect to Etcd",?MODULE,?LINE]};
+	       true->
+		   {ok,Node}
+	   end,
+    Result.
+connect_etcd(_Node,0,_Sleep,Boolean)->
+    Boolean;
+connect_etcd(_Node,_TimeLeft,_Sleep,true)->
+    true;
+connect_etcd(Node,TimeLeft,Sleep,Boolean)->
+    case rpc:call(Node,etcd,ping,[],5000) of
+	pong->
+	    NewTimeLeft=0,
+	    NewBoolean=true;
+	_ ->
+	    timer:sleep(Sleep),
+	    NewTimeLeft=TimeLeft-Sleep,
+	    NewBoolean=false
+    end,
+    connect_etcd(Node,NewTimeLeft,Sleep,NewBoolean).
