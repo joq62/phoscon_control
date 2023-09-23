@@ -1,43 +1,71 @@
 %%% -------------------------------------------------------------------
-%%% Author  : joqerlang
-%%% Description :
-%%% 1. API gateway to phoscon docker container which controls the zigbee devices
-%%% 2. acts as an middle man by translates erlang and logical to REST api's
-%%% 3. For each device model there is a gen_server  that translates erlang and logical context to REST api's phoscon
-%%% 4. For each present device a local resource is added to resources discovery {device_name,{node(),corresponding gen_server module}} 
-%%% 5. For each device that dissappers that local resoursours will be deleted from resources discovery
-%%% 6. phoscon_control continues updates and keep the status of all devices. That information is provided to all gen_servers
-%%%  
-%%% Created :
+%%% Author  : uabjle
+%%% Description : resource discovery accroding to OPT in Action 
+%%% This service discovery is adapted to 
+%%% Type = application 
+%%% Instance ={ip_addr,{IP_addr,Port}}|{erlang_node,{ErlNode}}
+%%% 
+%%% Created : 10 dec 2012
 %%% -------------------------------------------------------------------
--module(phoscon_control).
-  
--behaviour(gen_server).
+-module(tradfri_control_outlet).
+ 
+-behaviour(gen_server). 
 
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
--include("log.api").
-% -include("device.spec").
-%% --------------------------------------------------------------------
--define(ConbeeContainer,"deconz").
--define(SERVER,?MODULE).
 
 %% --------------------------------------------------------------------
-%% Resources
-%% --------------------------------------------------------------------
--define(LocalResources,[]). %% All Local resources are defined by which devices are present
--define(Targets,[etcd]).
+-include("log.api").
+
+ 
+-define(SERVER,?MODULE).
+-define(Type,<<"On/Off plug-in unit">>).
+
+% <<"3">> =>
+%      #{<<"etag">> => <<"49f06dd06302beebb3ff57e0ee354bb9">>,
+%        <<"hascolor">> => false,
+%        <<"lastannounced">> => <<"2023-04-26T05:52:42Z">>,
+%        <<"lastseen">> => <<"2023-08-20T14:51Z">>,
+%        <<"manufacturername">> => <<"IKEA of Sweden">>,
+%        <<"modelid">> => <<"TRADFRI control outlet">>,
+%        <<"name">> => <<"switch_lamp_balcony">>,
+%        <<"state">> =>
+%            #{<<"alert">> => <<"none">>,
+%              <<"on">> => false,
+%               <<"reachable">> => true},
+%        <<"swversion">> => <<"2.0.024">>,
+%        <<"type">> => <<"On/Off plug-in unit">>,
+%        <<"uniqueid">> => <<"cc:86:ec:ff:fe:7e:f3:27-01">>},
+
 
 %% External exports
 -export([
 	 %% basic
-	 set_state/4,
-	 set_config/4,
-	 get_maps/0,
-	 get_maps/1
 	
+	 num/1,
+	 etag/1,
+	 hascolor/1,
+	 lastannounced/1,
+	 lastseen/1,
+	 modelid/1,
+	 name/1,
+	 swversion/1,
+	 type/1,
+	 uniqueid/1,
+
+	 %% state_get
+	 is_alert/1,
+	 is_on/1,
+	 is_reachable/1,
+	 %% state_set
+	 turn_on/1,
+	 turn_off/1,
+
 	 
+	 all_info/1
+	 
+
 	]).
 
 
@@ -56,17 +84,9 @@
 
 %%-------------------------------------------------------------------
 
--record(state,{device_info,
-	       ip_addr,
-	       ip_port,
-	       crypto
+-record(state,{
 	      }).
--record(device,{
-		logic_name,
-		num_id,
-		module
-	       }).
-	
+
 
 %% ====================================================================
 %% External functions
@@ -96,32 +116,48 @@ stop()-> gen_server:call(?SERVER, {stop},infinity).
 %% @spec
 %% @end
 %%--------------------------------------------------------------------
-get_maps()->
-    gen_server:call(?SERVER, {get_maps},infinity). 
+all_info(RawMap)->
+    gen_server:call(?SERVER, {all_info,RawMap},infinity). 
 %%--------------------------------------------------------------------
 %% @doc
 %% @spec
 %% @end
 %%--------------------------------------------------------------------
-get_maps(DeviceType)->
-    gen_server:call(?SERVER, {get_maps,DeviceType},infinity). 
+%% Basic
+num({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"num">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+hascolor({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"hascolor">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+etag({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"etag">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+lastannounced({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"lastannounced">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+lastseen({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"lastseen">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+modelid({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"modelid">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+name({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"name">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+swversion({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"swversion">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+type({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {basic,<<"type">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+uniqueid({[],Name,WantedNumDeviceMaps})->basic,
+    gen_server:call(?SERVER, {basic,<<"uniqueid">>,{[],Name,WantedNumDeviceMaps}},infinity). 
 
+%% state_get
+is_alert({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {state_get,<<"alert">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+is_on({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {state_get,<<"on">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+is_reachable({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {state_get,<<"reachable">>,{[],Name,WantedNumDeviceMaps}},infinity). 
+%% state_set
+turn_on({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {state_set,turn_on,{[],Name,WantedNumDeviceMaps}},infinity). 
+turn_off({[],Name,WantedNumDeviceMaps})->
+    gen_server:call(?SERVER, {state_set,turn_off,{[],Name,WantedNumDeviceMaps}},infinity). 
 
-%%--------------------------------------------------------------------
-%% @doc
-%% @spec
-%% @end
-%%--------------------------------------------------------------------
-set_state(Id,Key,Value,DeviceType)->
-    gen_server:call(?SERVER, {set_state,Id,Key,Value,DeviceType},infinity). 
-
-%%--------------------------------------------------------------------
-%% @doc
-%% @spec
-%% @end
-%%--------------------------------------------------------------------
-set_config(Id,Key,Value,DeviceType)->
-    gen_server:call(?SERVER, {set_config,Id,Key,Value,DeviceType},infinity). 
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -147,31 +183,11 @@ ping() ->
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
 init([]) ->
-
-    %% Resources discovery
-    
-    {ok,HostName}=net:gethostname(),
-%    {ok,[{conbee,ConbeeConfig}]}=etcd_host:get_appl_config(HostName),
-
-    {ok,EtcdNode}=connect_etcd(),
-    {ok,[{conbee,ConbeeConfig}]}=rpc:call(EtcdNode,etcd_host,get_appl_config,[HostName],5000),
-    {conbee_addr,ConbeeAddr}=lists:keyfind(conbee_addr,1,ConbeeConfig),
-    {conbee_port,ConbeePort}=lists:keyfind(conbee_port,1,ConbeeConfig),
-    {conbee_key,ConbeeKey}=lists:keyfind(conbee_key,1,ConbeeConfig),
-    application:ensure_all_started(gun),
-    
-    os:cmd("docker restart "++?ConbeeContainer),
-    timer:sleep(5*1000),
-    
-    ?LOG_NOTICE("Server started ",["Servere started",node(),
-				   ip_addr,ConbeeAddr,
-				   ip_port,ConbeePort,
-				   crypto,ConbeeKey]),
    
-    {ok, #state{device_info=undefined,
-	        ip_addr=ConbeeAddr,
-		ip_port=ConbeePort,
-		crypto=ConbeeKey}}.   
+    
+    ?LOG_NOTICE("Server started ",["Servere started",node()]),
+   
+    {ok, #state{}}.   
  
 
 %% --------------------------------------------------------------------
@@ -185,59 +201,53 @@ init([]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 
-handle_call({get_maps},_From, State) ->
-    ConbeeAddr=State#state.ip_addr,
-    ConbeePort=State#state.ip_port,
-    Crypto=State#state.crypto,
- 
-    LightsMaps=lib_phoscon:get_maps("lights",ConbeeAddr,ConbeePort,Crypto),
-    SensorsMaps=lib_phoscon:get_maps("sensors",ConbeeAddr,ConbeePort,Crypto),
-    Reply=[{"lights",LightsMaps},{"sensors",SensorsMaps}],
+%%---------------------------------------------------------------------
+%% Basic
+%%---------------------------------------------------------------------
+%% basic
+
+handle_call({num,{[],Name,NumMaps}},_From, State) ->
+    [{Num,_Map}]=lib_hw_conbee:get_nummap(Name,?Type,NumMaps),
+    Reply=binary_to_list(Num),
     {reply, Reply, State};
 
 
-%%---------------------------------------------------------------------
-%% Lights 
-%%---------------------------------------------------------------------
-handle_call({get_maps,"lights"},_From, State) ->
-    ConbeeAddr=State#state.ip_addr,
-    ConbeePort=State#state.ip_port,
-    Crypto=State#state.crypto,
- 
-    Reply=lib_phoscon:get_maps("lights",ConbeeAddr,ConbeePort,Crypto),
+handle_call({basic,Key,{[],Name,NumMaps}},_From, State) ->
+    [{_Num,Map}]=lib_hw_conbee:get_nummap(Name,?Type,NumMaps),
+    Value=maps:get(Key,Map),
+    Reply=case is_binary(Value) of
+	      true->
+		  binary_to_list(Value);
+	      false->
+		  Value
+	  end,
     {reply, Reply, State};
 
-handle_call({set_state,Id,Key,Value,"lights"},_From, State) ->
-    DeviceType="lights",
-    ConbeeAddr=State#state.ip_addr,
-    ConbeePort=State#state.ip_port,
-    Crypto=State#state.crypto,
-    Reply=lib_phoscon:set_state(Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
+%% state_get
+handle_call({state_get,Key,{[],Name,NumMaps}},_From, State) ->
+    [{_Num,Map}]=lib_hw_conbee:get_nummap(Name,?Type,NumMaps),
+    DeviceMap=maps:get(<<"state">>,Map),
+    Value=maps:get(Key,DeviceMap),
+    Reply=case is_binary(Value) of
+	      true->
+		  binary_to_list(Value);
+	      false->
+		  Value
+	  end,
     {reply, Reply, State};
 
 
-%%---------------------------------------------------------------------
-%%  Sensors 
-%%---------------------------------------------------------------------
-handle_call({get_maps,"sensors"},_From, State) ->
-    ConbeeAddr=State#state.ip_addr,
-    ConbeePort=State#state.ip_port,
-    Crypto=State#state.crypto,
-
-    Reply=lib_phoscon:get_maps("sensors",ConbeeAddr,ConbeePort,Crypto),
+%% state_set
+handle_call({state_set,turn_on,{[],Name,NumMaps}},_From, State) ->
+    [{Num,_Map}]=lib_hw_conbee:get_nummap(Name,?Type,NumMaps),
+    Reply={binary_to_list(Num),<<"on">>,true},
     {reply, Reply, State};
 
-handle_call({set_state,Id,Key,Value,"sensors"},_From, State) ->
-    DeviceType="sensors",
-    ConbeeAddr=State#state.ip_addr,
-    ConbeePort=State#state.ip_port,
-    Crypto=State#state.crypto,
-    Reply=lib_phoscon:set_state(Id,Key,Value,DeviceType,ConbeeAddr,ConbeePort,Crypto),
+handle_call({state_set,turn_off,{[],Name,NumMaps}},_From, State) ->
+    [{Num,_Map}]=lib_hw_conbee:get_nummap(Name,?Type,NumMaps),
+    Reply={binary_to_list(Num),<<"on">>,false},
     {reply, Reply, State};
 
-%%---------------------------------------------------------------------
-%%  General 
-%%---------------------------------------------------------------------
 
 
 handle_call({ping},_From, State) ->
@@ -246,6 +256,7 @@ handle_call({ping},_From, State) ->
 
 handle_call(Request, From, State) ->
     ?LOG_WARNING("Unmatched signal",[Request]),
+
     Reply = {unmatched_signal,?MODULE,Request,From},
     {reply, Reply, State}.
 
@@ -258,7 +269,6 @@ handle_call(Request, From, State) ->
 %% --------------------------------------------------------------------
 handle_cast(Msg, State) ->
     ?LOG_WARNING("Unmatched signal",[Msg]),
-    
     {noreply, State}.
 
 %% --------------------------------------------------------------------
@@ -269,23 +279,13 @@ handle_cast(Msg, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 
-
-handle_info({gun_up,_,http}, State) -> 
-    {noreply, State};
-
-
-handle_info({gun_response,_,_,_,_,_}, State) -> 
-    {noreply, State};
-
 handle_info(timeout, State) -> 
     io:format("timeout ~p~n",[{?MODULE,?LINE}]), 
-    
     {noreply, State};
 
 handle_info(Info, State) ->
     ?LOG_WARNING("Unmatched signal",[Info]),
     {noreply, State}.
-
 %% --------------------------------------------------------------------
 %% Function: terminate/2
 %% Description: Shutdown the server
@@ -311,27 +311,3 @@ code_change(_OldVsn, State, _Extra) ->
 %% Description: Initiate the eunit tests, set upp needed processes etc
 %% Returns: non
 %% --------------------------------------------------------------------
-connect_etcd()->
-    Node='etcd_c201@c201',
-    Result=case connect_etcd(Node,20*1000,1000,false) of
-	       false->
-		   {error,["Can't connect to Etcd",?MODULE,?LINE]};
-	       true->
-		   {ok,Node}
-	   end,
-    Result.
-connect_etcd(_Node,0,_Sleep,Boolean)->
-    Boolean;
-connect_etcd(_Node,_TimeLeft,_Sleep,true)->
-    true;
-connect_etcd(Node,TimeLeft,Sleep,Boolean)->
-    case rpc:call(Node,etcd,ping,[],5000) of
-	pong->
-	    NewTimeLeft=0,
-	    NewBoolean=true;
-	_ ->
-	    timer:sleep(Sleep),
-	    NewTimeLeft=TimeLeft-Sleep,
-	    NewBoolean=false
-    end,
-    connect_etcd(Node,NewTimeLeft,Sleep,NewBoolean).

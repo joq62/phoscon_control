@@ -1,0 +1,38 @@
+
+
+
+
+At start and at interval X phoscon_control checks which devices that are present.
+For each present device the name is added to resource_discovery.
+If an existing device is missing/not present the name is deleted from resource discovery
+phoscon.hrl contains a tuple {ModelId,ServerModule} that can translate ModelId to a Server/module
+that handlse that specific device
+
+
+resources_type{actor_id,{node(),module()}}
+rd:call(actor_id,fun,Args,TimeOut)
+rd:call(actor_id,module(),fun(),Args,TimeOut)
+
+rd:add_local_resource(sensor_temp_inglasade,{node(),lumi_sensor_weather}),
+
+rd:call(sensor_temp_inglasade,get_temp,[],5000).
+
+logic_name->
+        <<"num">> => <<"6">>
+	<<"name">> => <<"sensor_temp_inglasade">>,
+	<<"modelid">> => <<"lumi.weather">>,
+        <<"type">> => <<"ZHAPressure">>,
+	server_id=>logic_name
+
+
+sensor_temp_inglasade->
+        <<"num">> => <<"4">>
+	<<"name">> => <<"sensor_temp_inglasade">>,
+	<<"modelid">> => <<"lumi.weather">>,
+         <<"type">> => <<"ZHATemperature">>,
+	server_id=>temp_inglasade
+
+
+
+process_temp_inglasade()->
+	lumi_sensor 
