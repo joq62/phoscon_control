@@ -18,7 +18,8 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include("log.api").
-% -include("device.spec").
+-include("phoscon_control.resource_discovery").
+
 %% --------------------------------------------------------------------
 -define(ConbeeContainer,"deconz").
 -define(SERVER,?MODULE).
@@ -26,8 +27,6 @@
 %% --------------------------------------------------------------------
 %% Resources
 %% --------------------------------------------------------------------
--define(LocalResources,[]). %% All Local resources are defined by which devices are present
--define(Targets,[etcd]).
 
 %% External exports
 -export([
@@ -149,12 +148,12 @@ ping() ->
 init([]) ->
 
     %% Resources discovery
+    [rd:add_local_resource(ResourceType,Resource)||{ResourceType,Resource}<-?LocalResourceTuples],
+    [rd:add_target_resource_type(TargetType)||TargetType<-?TargetTypes],
+    rd:trade_resources(),
     
     {ok,HostName}=net:gethostname(),
-%    {ok,[{conbee,ConbeeConfig}]}=etcd_host:get_appl_config(HostName),
-
-    {ok,EtcdNode}=connect_etcd(),
-    {ok,[{conbee,ConbeeConfig}]}=rpc:call(EtcdNode,etcd_host,get_appl_config,[HostName],5000),
+    {ok,[{conbee,ConbeeConfig}]}=rd:call(etcd,etcd_host,get_appl_config,[HostName],5000),
     {conbee_addr,ConbeeAddr}=lists:keyfind(conbee_addr,1,ConbeeConfig),
     {conbee_port,ConbeePort}=lists:keyfind(conbee_port,1,ConbeeConfig),
     {conbee_key,ConbeeKey}=lists:keyfind(conbee_key,1,ConbeeConfig),
