@@ -44,11 +44,13 @@ get(DeviceType,ConbeeAddr,ConbeePort,Crypto)->
     {ok, ConnPid} = gun:open(ConbeeAddr,ConbeePort),
     Cmd="/api/"++Crypto++"/"++DeviceType,
     Ref=gun:get(ConnPid,Cmd),
-    Result= get_info(gun:await_body(ConnPid, Ref)),
-    %= case gun:await_body(ConnPid, Ref) of
-%		   {ok,Body}->
-%		       jsx:decode(Body,[])
-%	       end,
+  %  Result= get_info(gun:await_body(ConnPid, Ref)),
+    Result= case gun:await_body(ConnPid, Ref) of
+		{ok,Body}->
+		    jsx:decode(Body,[]);
+		Reason ->
+		    {error,[Reason,?MODULE,?LINE]}
+	    end,
     ok=gun:close(ConnPid),
     Result.
 %%--------------------------------------------------------------------
