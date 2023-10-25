@@ -44,12 +44,39 @@ get(DeviceType,ConbeeAddr,ConbeePort,Crypto)->
     {ok, ConnPid} = gun:open(ConbeeAddr,ConbeePort),
     Cmd="/api/"++Crypto++"/"++DeviceType,
     Ref=gun:get(ConnPid,Cmd),
-    MapsList = case gun:await_body(ConnPid, Ref) of
-		   {ok,Body}->
-		       jsx:decode(Body,[])
-	       end,
+    Result= get_info(gun:await_body(ConnPid, Ref)),
+    %= case gun:await_body(ConnPid, Ref) of
+%		   {ok,Body}->
+%		       jsx:decode(Body,[])
+%	       end,
     ok=gun:close(ConnPid),
-    MapsList.
+    Result.
+%%--------------------------------------------------------------------
+%% @doc
+%% @spec
+%% @end
+%%--------------------------------------------------------------------
+get_info({ok,Body})->
+    get_info(Body);
+get_info(Body)->
+    Map=jsx:decode(Body,[]),
+    format_info(Map).
+
+format_info(Map)->
+    L=maps:to_list(Map),
+ %   io:format("L=~p~n",[{?MODULE,?LINE,L}]),
+    format_info(L,[]).
+
+format_info([],Formatted)->
+    Formatted;
+format_info([{IdBin,Map}|T],Acc)->
+    NumId=binary_to_list(IdBin),
+    Name=binary_to_list(maps:get(<<"name">> ,Map)),
+    ModelId=binary_to_list(maps:get(<<"modelid">>,Map)),
+    State=maps:get(<<"state">>,Map),
+    NewAcc=[{Name,NumId,ModelId,State}|Acc],
+    format_info(T,NewAcc).
+
 %%--------------------------------------------------------------------
 %% @doc
 %% @spec
