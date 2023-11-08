@@ -9,14 +9,19 @@
 %%% Pod consits beams from all services, app and app and sup erl.
 %%% The setup of envs is
 %%% -------------------------------------------------------------------
--module(all).      
+-module(dependent_apps).      
  
 -export([start/0]).
-
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
 
+
+-define(MainLogDir,"logs").
+-define(LocalLogDir,"to_be_changed.logs").
+-define(LogFile,"logfile").
+-define(MaxNumFiles,10).
+-define(MaxNumBytes,100000).
 
 %% --------------------------------------------------------------------
 %% Function: available_hosts()
@@ -24,25 +29,30 @@
 %% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
 %% --------------------------------------------------------------------
 start()->
-   
-    ok=dependent_apps:start(),
+    io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
+
+    ok=start_dependet_apps(),
     ok=setup(),
-    ok=test1(),
-
-
-    io:format("Test OK !!! ~p~n",[?MODULE]),
-    timer:sleep(3000),
-    init:stop(),
     ok.
-
+ 
 %% --------------------------------------------------------------------
 %% Function: available_hosts()
 %% Description: Based on hosts.config file checks which hosts are avaible
 %% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
 %% --------------------------------------------------------------------
-test1()->    
-    io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
-    42=adder:add(20,22),
+start_dependet_apps()->
+      io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
+
+    file:del_dir_r(?MainLogDir),
+    ok=application:start(log),
+    pong=log:ping(),
+    LocalLogDir=atom_to_list(node())++".logs",
+    ok=log:create_logger(?MainLogDir,LocalLogDir,?LogFile,?MaxNumFiles,?MaxNumBytes),
+    
+    ok=application:start(rd),
+    pong=rd:ping(),
+    ok=application:start(etcd),
+    pong=etcd:ping(),
 
     ok.
 %% --------------------------------------------------------------------
@@ -50,9 +60,8 @@ test1()->
 %% Description: Based on hosts.config file checks which hosts are avaible
 %% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
 %% --------------------------------------------------------------------
+
+
 setup()->
-    io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
-  
-    ok=application:start(phoscon_control),
-    pong=phoscon_control:ping(),
+     io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
     ok.

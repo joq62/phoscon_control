@@ -12,7 +12,6 @@
 -module(all).      
  
 -export([start/0]).
-
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
@@ -24,35 +23,37 @@
 %% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
 %% --------------------------------------------------------------------
 start()->
-   
-    ok=dependent_apps:start(),
-    ok=setup(),
-    ok=test1(),
-
-
-    io:format("Test OK !!! ~p~n",[?MODULE]),
-    timer:sleep(3000),
-    init:stop(),
-    ok.
-
-%% --------------------------------------------------------------------
-%% Function: available_hosts()
-%% Description: Based on hosts.config file checks which hosts are avaible
-%% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
-%% --------------------------------------------------------------------
-test1()->    
     io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
-    42=adder:add(20,22),
 
+    ok=setup(),
+       
+    ok=hw_conbee_tests:start(),
+    
+   
+   
+    io:format("Stop OK !!! ~p~n",[{?MODULE,?FUNCTION_NAME}]),
+ %   timer:sleep(2000),
+ %  init:stop(),
     ok.
+
+
 %% --------------------------------------------------------------------
 %% Function: available_hosts()
 %% Description: Based on hosts.config file checks which hosts are avaible
 %% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
 %% --------------------------------------------------------------------
+
+%% --------------------------------------------------------------------
+%% Function: available_hosts()
+%% Description: Based on hosts.config file checks which hosts are avaible
+%% Returns: List({HostId,Ip,SshPort,Uid,Pwd}
+%% --------------------------------------------------------------------
+
 setup()->
     io:format("Start ~p~n",[{?MODULE,?FUNCTION_NAME}]),
-  
-    ok=application:start(phoscon_control),
-    pong=phoscon_control:ping(),
+        
+ 
+    
+    io:format("Stop OK !!! ~p~n",[{?MODULE,?FUNCTION_NAME}]),
+
     ok.
