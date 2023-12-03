@@ -1,7 +1,7 @@
 {"1.2.0",
 [{<<"cowboy">>,
   {git,"https://github.com/ninenines/cowboy",
-       {ref,"22adc4de517bf54661795f6e18b6b2e62aec4140"}},
+       {ref,"b2a16a2ee6ffbc9b9f4417d8b7ee90248c0cc1e3"}},
   0},
  {<<"cowlib">>,
   {git,"https://github.com/ninenines/cowlib",

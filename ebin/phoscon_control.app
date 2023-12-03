@@ -1,0 +1,11 @@
+{application,phoscon_control,
+             [{description,"An OTP application"},
+              {vsn,"0.1.0"},
+              {registered,[]},
+              {mod,{phoscon_control_app,[]}},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {modules,[lib_phoscon,phoscon_control,phoscon_control_app,
+                        phoscon_control_sup,tradfri_control_outlet]},
+              {licenses,["Apache-2.0"]},
+              {links,[]}]}.
